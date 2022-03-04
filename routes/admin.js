@@ -13,8 +13,13 @@ const model = require('../models/index');
 const res = require('express/lib/response');
 const admin = model.admin
 
+//import auth
+const auth = require("../auth")
+const jwt = require("jsonwebtoken")
+const SECRET_KEY = "BelajarNodeJSItuMenyenangkan"
+
 //endpoint untuk menampilkan semua data admin, METHOD: GET, function FINDALL()
-app.get("/", (req,res) =>{
+app.get("/",auth, (req,res) =>{
     admin.findAll()
         .then(admin => {
             res.json(admin)
@@ -44,7 +49,7 @@ app.post("/", (req,res) => {
         })
 })
 //endpoint untuk mengupdate data admin, METHOD: PUT, fuction: UPDATE
-app.put("/:id", (req,res) => {
+app.put("/:id",auth, (req,res) => {
     let param = {
         admin_id : req.params.id
     }
@@ -66,7 +71,7 @@ app.put("/:id", (req,res) => {
     })
 })
 //endpoint untuk menghapus data admin,METHOD: DELETE, function: destroy
-app.delete("/:id", (req,res) => {
+app.delete("/:id",auth, (req,res) => {
     let param = {
         admin_id : req.params.id
     }
@@ -83,4 +88,29 @@ app.delete("/:id", (req,res) => {
     })
 })
 
+//endpoint login admin METHOD: POST fuction: findone
+app.post("/auth", async (req,res) => {
+    let data = {
+        username: req.body.username,
+        password: md5(req.body.password)
+    }
+    let result = await admin.findOne({where:data})
+    if(result){
+        //let played from data
+        let payled = JSON.stringify(result)
+        //generate token based on played and secret_key
+        let token = jwt.sign(payled, SECRET_KEY)
+
+        res.json({
+            longged: true,
+            data: result,
+            token: token
+        })
+    } else {
+        res.json({
+            logged: false,
+            mesaage: "invalid username or password"
+        })
+    }
+})
 module.exports = app
